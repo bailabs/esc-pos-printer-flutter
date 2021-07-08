@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:escposprinter/escposprinter.dart';
+import 'package:escpos_usb_printer/escpos_usb_printer.dart';
 
 void main() => runApp(new MyApp());
 
@@ -10,8 +10,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List devices = [];
-  bool connected = false;
+  List<USBDevice> _devices = [];
+  bool _connected = false;
 
   @override
   initState() {
@@ -20,37 +20,23 @@ class _MyAppState extends State<MyApp> {
   }
 
   _list() async {
-    List returned;
-    try {
-      returned = await Escposprinter.getUSBDeviceList;
-    } on PlatformException {
-      //response = 'Failed to get platform version.';
-    }
-    setState((){
-      devices = returned;
+    List<USBDevice> devices = await EscposUsbPrinter.getUSBDeviceList();
+    setState(() {
+      _devices = devices;
     });
   }
 
   _connect(int vendor, int product) async {
-    bool returned;
-    try {
-      returned = await Escposprinter.connectPrinter(vendor, product);
-    } on PlatformException {
-      //response = 'Failed to get platform version.';
-    }
-    if(returned){
-      setState((){
-        connected = true;
+    bool success = await EscposUsbPrinter.connectPrinter(vendorId: vendor, productid: product);
+    if (success) {
+      setState(() {
+        _connected = true;
       });
     }
   }
 
   _print() async {
-    try {
-      await Escposprinter.printText("Testing ESC POS printer...");
-    } on PlatformException {
-      //response = 'Failed to get platform version.';
-    }
+    await EscposUsbPrinter.printText("Testing ESC POS printer...");
   }
 
   @override
@@ -61,35 +47,40 @@ class _MyAppState extends State<MyApp> {
           title: new Text('ESC POS'),
           actions: <Widget>[
             new IconButton(
-              icon: new Icon(Icons.refresh), 
-              onPressed: () {
-                _list();
-              }
-            ),
-            connected == true ? new IconButton(
-              icon: new Icon(Icons.print), 
-              onPressed: () {
-                _print();
-              }
-            ) : new Container(),
+                icon: new Icon(Icons.refresh),
+                onPressed: () {
+                  _list();
+                }),
+            _connected == true
+                ? new IconButton(
+                    icon: new Icon(Icons.print),
+                    onPressed: () {
+                      _print();
+                    })
+                : new Container(),
           ],
         ),
-        body: devices.length > 0 ? new ListView(
-          scrollDirection: Axis.vertical,
-          children: _buildList(devices),
-        ) : null,
+        body: _devices.length > 0
+            ? new ListView(
+                scrollDirection: Axis.vertical,
+                children: _buildList(_devices),
+              )
+            : null,
       ),
     );
   }
 
-  List<Widget> _buildList(List devices){
-    return devices.map((device) => new ListTile(
-      onTap: () {
-        _connect(int.parse(device['vendorid']), int.parse(device['productid']));
-      },
-      leading: new Icon(Icons.usb),
-      title: new Text(device['manufacturer'] + " " + device['product']),
-      subtitle: new Text(device['vendorid'] + " " + device['productid']),
-    )).toList();
+  List<Widget> _buildList(List<USBDevice> devices) {
+    return devices
+        .map((device) => new ListTile(
+              onTap: () {
+                _connect(device.vendorId, device.productId);
+              },
+              leading: new Icon(Icons.usb),
+              title: new Text(device.manufacturerName + " " + device.productName),
+              subtitle:
+                  new Text(device.vendorId.toString() + " " + device.productId.toString()),
+            ))
+        .toList();
   }
 }
