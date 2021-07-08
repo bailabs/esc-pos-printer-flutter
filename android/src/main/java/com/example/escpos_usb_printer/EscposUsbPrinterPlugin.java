@@ -2,6 +2,7 @@ package com.example.escpos_usb_printer;
 
 import android.hardware.usb.UsbDevice;
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;

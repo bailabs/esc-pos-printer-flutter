@@ -28,38 +28,38 @@ public class USBPrinterAdapter {
     private Context mContext;
     private UsbManager mUSBManager;
     private PendingIntent mPermissionIndent;
-    private UsbDevice mUsbDevice ;
+    private UsbDevice mUsbDevice;
     private UsbDeviceConnection mUsbDeviceConnection;
     private UsbInterface mUsbInterface;
     private UsbEndpoint mEndPoint;
-    //private static final String ACTION_USB_PERMISSION = "com.pinmi.react.USBPrinter.USB_PERMISSION";
-    private static final String ACTION_USB_PERMISSION = "br.com.samhaus.escposprinter.USB_PERMISSION";
+    private static final String ACTION_USB_PERMISSION = "com.example.escpos_usb_printer.USB_PERMISSION";
 
-    private USBPrinterAdapter(){}
+    private USBPrinterAdapter() {
+    }
 
     public static USBPrinterAdapter getInstance() {
-        if(mInstance == null) {
+        if (mInstance == null) {
             mInstance = new USBPrinterAdapter();
         }
         return mInstance;
     }
 
-    private final BroadcastReceiver mUsbDeviceReceiver  = new BroadcastReceiver(){
+    private final BroadcastReceiver mUsbDeviceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if(ACTION_USB_PERMISSION.equals(action)){
+            if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized (this) {
                     UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)){
-                        Log.i(LOG_TAG, "Success to grant permission for device "+usbDevice.getDeviceId()+", vendor_id: "+ usbDevice.getVendorId()+ " product_id: " + usbDevice.getProductId());
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        Log.i(LOG_TAG, "Success get permission for device " + usbDevice.getDeviceId() + ", vendor_id: " + usbDevice.getVendorId() + " product_id: " + usbDevice.getProductId());
                         mUsbDevice = usbDevice;
-                    }else {
-                        Toast.makeText(context, "User refused to give USB device permissions" + usbDevice.getDeviceName(), Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(context, "User refused to give USB device permission: " + usbDevice.getDeviceName(), Toast.LENGTH_LONG).show();
                     }
                 }
-            } else if(UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)){
-                if(mUsbDevice != null){
+            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                if (mUsbDevice != null) {
                     Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
                     closeConnectionIfExists();
                 }
@@ -74,11 +74,11 @@ public class USBPrinterAdapter {
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         mContext.registerReceiver(mUsbDeviceReceiver, filter);
-        Log.v(LOG_TAG, "ESC POS Printer initialized");
+        Log.v(LOG_TAG, "ESC/POS Printer initialized");
     }
 
     public void closeConnectionIfExists() {
-        if(mUsbDeviceConnection != null) {
+        if (mUsbDeviceConnection != null) {
             mUsbDeviceConnection.releaseInterface(mUsbInterface);
             mUsbDeviceConnection.close();
             mUsbInterface = null;
@@ -89,7 +89,7 @@ public class USBPrinterAdapter {
 
     public List<UsbDevice> getDeviceList() {
         if (mUSBManager == null) {
-            Toast.makeText(mContext, "USB Manager is not initialized while get device list", Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, "USB Manager is not initialized while trying to get devices list", Toast.LENGTH_LONG).show();
             return Collections.emptyList();
         }
         return new ArrayList<UsbDevice>(mUSBManager.getDeviceList().values());
@@ -97,11 +97,11 @@ public class USBPrinterAdapter {
 
     public boolean selectDevice(Integer vendorId, Integer productId) {
 
-        if(mUsbDevice == null || mUsbDevice.getVendorId() != vendorId || mUsbDevice.getProductId()!= productId) {
+        if (mUsbDevice == null || mUsbDevice.getVendorId() != vendorId || mUsbDevice.getProductId() != productId) {
             closeConnectionIfExists();
             List<UsbDevice> usbDevices = getDeviceList();
-            for(UsbDevice usbDevice: usbDevices){
-                if((usbDevice.getVendorId() == vendorId) && (usbDevice.getProductId() == productId)){
+            for (UsbDevice usbDevice : usbDevices) {
+                if ((usbDevice.getVendorId() == vendorId) && (usbDevice.getProductId() == productId)) {
                     Log.v(LOG_TAG, "Request for device: vendor_id: " + usbDevice.getVendorId() + ", product_id: " + usbDevice.getProductId());
                     closeConnectionIfExists();
                     mUSBManager.requestPermission(usbDevice, mPermissionIndent);
@@ -114,39 +114,39 @@ public class USBPrinterAdapter {
     }
 
     public boolean openConnection() {
-        if(mUsbDevice == null){
+        if (mUsbDevice == null) {
             Log.e(LOG_TAG, "USB Deivce is not initialized");
             return false;
         }
-        if(mUSBManager == null) {
+        if (mUSBManager == null) {
             Log.e(LOG_TAG, "USB Manager is not initialized");
             return false;
         }
 
-        if(mUsbDeviceConnection != null) {
+        if (mUsbDeviceConnection != null) {
             Log.i(LOG_TAG, "USB Connection already connected");
             return true;
         }
 
         UsbInterface usbInterface = mUsbDevice.getInterface(0);
-        for(int i = 0; i < usbInterface.getEndpointCount(); i++){
+        for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
             final UsbEndpoint ep = usbInterface.getEndpoint(i);
-            if(ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                if(ep.getDirection() == UsbConstants.USB_DIR_OUT) {
+            if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
+                if (ep.getDirection() == UsbConstants.USB_DIR_OUT) {
                     UsbDeviceConnection usbDeviceConnection = mUSBManager.openDevice(mUsbDevice);
-                    if(usbDeviceConnection == null) {
-                        Log.e(LOG_TAG, "failed to open USB Connection");
+                    if (usbDeviceConnection == null) {
+                        Log.e(LOG_TAG, "Failed to open USB Connection");
                         return false;
                     }
                     Toast.makeText(mContext, "Device connected", Toast.LENGTH_SHORT).show();
-                    if (usbDeviceConnection.claimInterface(usbInterface, true)){
+                    if (usbDeviceConnection.claimInterface(usbInterface, true)) {
                         mEndPoint = ep;
                         mUsbInterface = usbInterface;
                         mUsbDeviceConnection = usbDeviceConnection;
                         return true;
-                    }else{
+                    } else {
                         usbDeviceConnection.close();
-                        Log.e(LOG_TAG, "failed to claim usb connection");
+                        Log.e(LOG_TAG, "Failed to retrieve usb connection");
                         return false;
                     }
                 }
@@ -155,51 +155,51 @@ public class USBPrinterAdapter {
         return true;
     }
 
-    public boolean printText(String text){
+    public boolean printText(String text) {
         final String printData = text;
-        Log.v(LOG_TAG, "start to print text");
+        Log.v(LOG_TAG, "Printing text");
         boolean isConnected = openConnection();
-        if(isConnected) {
+        if (isConnected) {
             Log.v(LOG_TAG, "Connected to device");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    byte [] bytes = printData.getBytes(Charset.forName("UTF-8"));
+                    byte[] bytes = printData.getBytes(Charset.forName("UTF-8"));
                     int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
-                    Log.i(LOG_TAG, "Return Status: b-->"+b);
+                    Log.i(LOG_TAG, "Return code: " + b);
                 }
             }).start();
             return true;
-        }else{
-            Log.v(LOG_TAG, "failed to connected to device");
+        } else {
+            Log.v(LOG_TAG, "Failed to connect to device");
             return false;
         }
     }
 
     public boolean printRawData(String data) {
         final String rawData = data;
-        Log.v(LOG_TAG, "start to print raw data " + data);
+        Log.v(LOG_TAG, "Printing raw data: " + data);
         boolean isConnected = openConnection();
-        if(isConnected) {
+        if (isConnected) {
             Log.v(LOG_TAG, "Connected to device");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    byte [] bytes = Base64.decode(rawData, Base64.DEFAULT);
+                    byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
                     int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
-                    Log.i(LOG_TAG, "Return Status: "+b);
+                    Log.i(LOG_TAG, "Return code: " + b);
                 }
             }).start();
             return true;
-        }else{
-            Log.v(LOG_TAG, "failed to connected to device");
+        } else {
+            Log.v(LOG_TAG, "Failed to connected to device");
             return false;
         }
     }
 
     public boolean printBytes(ArrayList<Integer> bytes) {
         final ArrayList<Integer> bytesArray = bytes;
-        Log.v(LOG_TAG, "start to print text");
+        Log.v(LOG_TAG, "printing bytes");
         boolean isConnected = openConnection();
         if (isConnected) {
             Log.v(LOG_TAG, "Connected to device");
@@ -217,12 +217,12 @@ public class USBPrinterAdapter {
                         bytedata[i] = (byte) temp[i];
                     }
                     int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytedata, bytedata.length, 100000);
-                    Log.i(LOG_TAG, "Return Status: b-->"+b);
+                    Log.i(LOG_TAG, "Return code: " + b);
                 }
             }).start();
             return true;
         } else {
-            Log.v(LOG_TAG, "failed to connected to device");
+            Log.v(LOG_TAG, "Failed to connected to device");
             return false;
         }
     }

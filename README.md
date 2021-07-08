@@ -1,7 +1,6 @@
 # ESC POS Printer for Flutter
 
-A fFutter plugin to connect and print on ESC/POS USB Printer.
-
+A fFutter plugin to connect and print on ESC/POS USB Printer. This is a fork that is migrated to AndroidX and works on Flutter 2.2.3 stable channel. Original credit goes to [@marcusfelix](https://github.com/marcusfelix).
 
 ## Installation
 
@@ -124,6 +123,5 @@ class _MyAppState extends State<MyApp> {
         .toList();
   }
 }
-
 
 ````
